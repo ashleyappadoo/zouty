@@ -16,11 +16,15 @@ const LangContext = createContext<LangContextType>({
 
 export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>('fr')
+  const [mounted, setMounted] = useState(false)
 
-  // Persist to localStorage
+  // Persist to localStorage — client only
   useEffect(() => {
-    const saved = localStorage.getItem('zouti-lang') as Lang | null
-    if (saved === 'fr' || saved === 'en') setLangState(saved)
+    setMounted(true)
+    try {
+      const saved = localStorage.getItem('zouti-lang') as Lang | null
+      if (saved === 'fr' || saved === 'en') setLangState(saved)
+    } catch {}
   }, [])
 
   const setLang = (l: Lang) => {
