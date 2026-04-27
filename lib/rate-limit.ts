@@ -8,12 +8,11 @@ interface RateLimitEntry {
   timestamps: number[]
 }
 
-// In-memory store (resets on serverless cold start — acceptable for MVP)
 const store = new Map<string, RateLimitEntry>()
 
-const WINDOW_MS = 60 * 60 * 1000  // 1 hour
-const MAX_REQUESTS = 20            // max 20 AI calls per hour per IP
-const MAX_PROMPT_CHARS = 12000     // ~3000 tokens max input
+const WINDOW_MS = 60 * 60 * 1000
+const MAX_REQUESTS = 20
+const MAX_PROMPT_CHARS = 12000
 
 export function getRateLimitHeaders(remaining: number, resetMs: number) {
   return {
@@ -33,20 +32,16 @@ export function checkRateLimit(ip: string): {
   const now = Date.now()
   const windowStart = now - WINDOW_MS
 
-  // Get or create entry
   let entry = store.get(ip)
   if (!entry) {
     entry = { timestamps: [] }
     store.set(ip, entry)
   }
 
-  // Purge timestamps outside the sliding window
   entry.timestamps = entry.timestamps.filter(ts => ts > windowStart)
 
   const count = entry.timestamps.length
   const remaining = MAX_REQUESTS - count
-
-  // Calculate reset time (when oldest request falls out of window)
   const oldestTs = entry.timestamps[0] ?? now
   const resetMs = oldestTs + WINDOW_MS
 
@@ -55,16 +50,15 @@ export function checkRateLimit(ip: string): {
     return { allowed: false, remaining: 0, resetMs, retryAfter }
   }
 
-  // Record this request
   entry.timestamps.push(now)
 
-  // Cleanup old IPs periodically (every 1000 requests to avoid memory leak)
+  // Cleanup old IPs — forEach compatible with all TS targets
   if (store.size > 10000) {
-    for (const [key, val] of store.entries()) {
+    store.forEach((val, key) => {
       if (val.timestamps.every(ts => ts < windowStart)) {
         store.delete(key)
       }
-    }
+    })
   }
 
   return { allowed: true, remaining: remaining - 1, resetMs }
