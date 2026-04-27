@@ -32,7 +32,7 @@ export function PdfMergeTool() {
         pages.forEach(p => merged.addPage(p))
       }
       const out = await merged.save()
-      downloadBlob(new Blob([out], { type: 'application/pdf' }), 'zouti-fusion.pdf')
+      downloadBlob(new Blob([out as any], { type: 'application/pdf' }), 'zouti-fusion.pdf')
     } catch (e) {
       alert('Erreur lors de la fusion. Vérifiez que vos PDFs ne sont pas protégés.')
     }
@@ -126,7 +126,7 @@ export function PdfSplitTool() {
       const copied = await out.copyPages(src, indices)
       copied.forEach(p => out.addPage(p))
       const data = await out.save()
-      downloadBlob(new Blob([data], { type: 'application/pdf' }), 'zouti-extrait.pdf')
+      downloadBlob(new Blob([data as any], { type: 'application/pdf' }), 'zouti-extrait.pdf')
     } catch (e) { alert('Erreur lors de la découpe.') }
     setLoading(false)
   }
@@ -209,7 +209,7 @@ export function PdfRotateTool() {
         page.setRotation(degrees((current + angle) % 360))
       })
       const data = await doc.save()
-      downloadBlob(new Blob([data], { type: 'application/pdf' }), 'zouti-rotation.pdf')
+      downloadBlob(new Blob([data as any], { type: 'application/pdf' }), 'zouti-rotation.pdf')
     } catch (e) { alert('Erreur lors de la rotation.') }
     setLoading(false)
   }
