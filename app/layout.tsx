@@ -1,9 +1,12 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import dynamic from 'next/dynamic'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { LangProvider } from '@/components/LangContext'
-import DebugPanel from '@/components/ui/DebugPanel'
+
+// DebugPanel uses window/localStorage — must be client-only, no SSR
+const DebugPanel = dynamic(() => import('@/components/ui/DebugPanel'), { ssr: false })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://zouti.fr'),
@@ -28,7 +31,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <head>
-        {/* Google AdSense — replace ca-pub-XXXXXXXXXXXXXXXX with your Publisher ID */}
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossOrigin="anonymous" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org', '@type': 'WebSite', name: 'Zouti', url: 'https://zouti.fr',
