@@ -184,7 +184,7 @@ export function CsvToExcelTool() {
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, ws, 'Données')
       const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
-      downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'data.xlsx')
+      downloadBlob(new Blob([buf as any], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'data.xlsx')
     } catch (e) { alert('Erreur : ' + (e as Error).message) }
     setLoading(false)
   }
