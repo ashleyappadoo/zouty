@@ -39,7 +39,7 @@ export function ImagesToPdfTool() {
         page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height })
       }
       const out = await doc.save()
-      downloadBlob(new Blob([out], { type: 'application/pdf' }), 'zouti-images.pdf')
+      downloadBlob(new Blob([out as any], { type: 'application/pdf' }), 'zouti-images.pdf')
     } catch (e) { console.error(e); alert('Erreur lors de la conversion.') }
     setLoading(false)
   }
@@ -175,7 +175,7 @@ export function PdfWatermarkTool() {
         })
       })
       const out = await doc.save()
-      downloadBlob(new Blob([out], { type: 'application/pdf' }), 'zouti-filigrane.pdf')
+      downloadBlob(new Blob([out as any], { type: 'application/pdf' }), 'zouti-filigrane.pdf')
     } catch (e) { console.error(e); alert('Erreur lors de l\'application du filigrane.') }
     setLoading(false)
   }
