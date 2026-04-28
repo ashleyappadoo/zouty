@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkRateLimit, getClientIp, validatePrompt, getRateLimitHeaders } from '@/lib/rate-limit'
 
+export const maxDuration = 60 // Vercel Pro allows up to 300s, free tier 60s
+
 export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req)
@@ -8,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: 'Trop de requêtes. Réessayez dans quelques minutes.', error_en: 'Too many requests. Please try again.', retryAfter: rateLimit.retryAfter },
+        { error: 'Trop de requêtes. Réessayez dans quelques minutes.', retryAfter: rateLimit.retryAfter },
         { status: 429, headers: { ...getRateLimitHeaders(0, rateLimit.resetMs), 'Retry-After': String(rateLimit.retryAfter) } }
       )
     }
@@ -31,29 +33,51 @@ export async function POST(req: NextRequest) {
 
     const finalSystem = system ? `${system}\n\n${langInstruction}` : langInstruction
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: 'claude-haiku-20240307',
-        max_tokens: 2048,
-        system: finalSystem,
-        messages: [{ role: 'user', content: (prompt ?? '').slice(0, 12000) }],
-      }),
-    })
+    // AbortController pour timeout explicite 55s (sous la limite Vercel de 60s)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 55000)
+
+    let response: Response
+    try {
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-20240307',
+          max_tokens: 1024, // réduit pour réponses plus rapides
+          system: finalSystem,
+          messages: [{ role: 'user', content: (prompt ?? '').slice(0, 12000) }],
+        }),
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
 
     if (!response.ok) {
       const err = await response.text()
       console.error('Anthropic error:', response.status, err)
-      if (response.status === 529 || response.status === 503) return NextResponse.json({ error: 'Service IA surchargé. Réessayez.' }, { status: 503 })
+      if (response.status === 529 || response.status === 503) {
+        return NextResponse.json({ error: 'Service IA surchargé. Réessayez.' }, { status: 503 })
+      }
       return NextResponse.json({ error: 'Erreur du service IA' }, { status: 500 })
     }
 
     const data = await response.json()
     const text = data.content?.[0]?.text ?? ''
-    return NextResponse.json({ result: text, remaining: rateLimit.remaining }, { headers: getRateLimitHeaders(rateLimit.remaining, rateLimit.resetMs) })
+    return NextResponse.json(
+      { result: text, remaining: rateLimit.remaining },
+      { headers: getRateLimitHeaders(rateLimit.remaining, rateLimit.resetMs) }
+    )
 
-  } catch (e) {
+  } catch (e: any) {
+    if (e?.name === 'AbortError') {
+      return NextResponse.json({ error: 'Délai dépassé. Réessayez avec un texte plus court.' }, { status: 504 })
+    }
     console.error('Error in /api/ai:', e)
     return NextResponse.json({ error: 'Erreur interne' }, { status: 500 })
   }
