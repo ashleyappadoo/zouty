@@ -3,7 +3,7 @@ import './globals.css'
 import dynamic from 'next/dynamic'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import { LangProvider } from '@/components/LangContext'
+import { LangProvider } from '@/components/ui/LangContext'
 
 // DebugPanel uses window/localStorage — must be client-only, no SSR
 const DebugPanel = dynamic(() => import('@/components/ui/DebugPanel'), { ssr: false })
