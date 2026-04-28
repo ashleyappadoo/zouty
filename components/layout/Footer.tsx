@@ -1,3 +1,4 @@
+'use client'
 import Link from 'next/link'
 import { CATEGORIES, TOOLS } from '@/lib/tools-registry'
 
