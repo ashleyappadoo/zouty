@@ -1,36 +1,23 @@
-import { notFound } from 'next/navigation'
-import type { Metadata } from 'next'
-import { TOOLS, getToolBySlug } from '@/lib/tools-registry'
+'use client'
+import { useParams } from 'next/navigation'
+import { getToolBySlug } from '@/lib/tools-registry'
 import ToolLayout from '@/components/tools/ToolLayout'
 import ToolRenderer from '@/components/tools/ToolRenderer'
 
-interface Props {
-  params: { category: string; slug: string }
-}
+export default function ToolPage() {
+  const params = useParams()
+  const slug = params?.slug as string
+  const category = params?.category as string
 
-export async function generateStaticParams() {
-  return TOOLS.map(tool => ({ category: tool.category, slug: tool.slug }))
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const tool = getToolBySlug(params.slug)
-  if (!tool) return { title: 'Outil non trouvé' }
-  return {
-    title: tool.metaTitle,
-    description: tool.metaDescription,
-    keywords: tool.tags,
-    openGraph: {
-      title: tool.metaTitle,
-      description: tool.metaDescription,
-      type: 'website',
-    },
-    alternates: { canonical: `https://zouti.fr/tools/${tool.category}/${tool.slug}` },
+  const tool = getToolBySlug(slug)
+  if (!tool || tool.category !== category) {
+    return (
+      <div style={{ textAlign: 'center', padding: '80px 24px', color: '#8888aa' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🔧</div>
+        <h2 style={{ fontFamily: 'Syne, sans-serif', color: '#f0f0f5' }}>Outil non trouvé</h2>
+      </div>
+    )
   }
-}
-
-export default function ToolPage({ params }: Props) {
-  const tool = getToolBySlug(params.slug)
-  if (!tool || tool.category !== params.category) notFound()
 
   return (
     <ToolLayout tool={tool}>
